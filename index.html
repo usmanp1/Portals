@@ -45,6 +45,17 @@
             <button class="bg-slate-800 text-white px-6 py-2 rounded shadow hover:bg-slate-700 transition">Filter Leads</button>
         </div>
 
+<div class="mb-6 max-w-md mx-auto">
+    <div class="relative shadow-sm rounded-lg">
+        <input type="text" id="searchInput" onkeyup="searchLeads()" placeholder="Search by Neighborhood, City, or Case..." class="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-slate-800">
+        <div class="absolute left-3 top-3.5 text-slate-400">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+    </div>
+</div>
+
+
+
         <div class="bg-white rounded-xl shadow-xl overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold">
@@ -91,57 +102,67 @@
     </footer>
 
 
+
 <script>
     // Paste your Google Apps Script Web App URL between the single quotes:
-    const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbzFE9q40rH6xJZ__oK7JWqDULRQbB5DZyZ6vkY15x0pNG3kHQ3ud6bQ8wP__n18wUgE/exec';
+    const GOOGLE_SHEET_API = 'https://cors-anywhere.herokuapp.com/https://script.google.com/macros/s/AKfycbzFE9q40rH6xJZ__oK7JWqDULRQbB5DZyZ6vkY15x0pNG3kHQ3ud6bQ8wP__n18wUgE/exec';
 
-    fetch(GOOGLE_SHEET_API)
-        .then(response => response.json())
-        .then(data => {
-            const tableBody = document.getElementById('lead-table-body');
-            tableBody.innerHTML = ''; // Flushes out placeholder code
+fetch(GOOGLE_SHEET_API)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('lead-table-body');
+                tableBody.innerHTML = ''; 
 
-            data.forEach(lead => {
-                // Color coding system based on your Friction Score
-                const scoreInt = parseInt(lead.frictionScore);
-                let badgeColor = 'bg-blue-100 text-blue-700'; // Default low friction
-                if (scoreInt >= 7) {
-                    badgeColor = 'bg-red-100 text-red-700 font-bold'; // High target friction
-                } else if (scoreInt >= 4) {
-                    badgeColor = 'bg-amber-100 text-amber-700'; // Medium friction
+                data.forEach(lead => {
+                    const scoreInt = parseInt(lead.frictionScore);
+                    let badgeColor = 'bg-blue-100 text-blue-700'; 
+                    if (scoreInt >= 7) {
+                        badgeColor = 'bg-red-100 text-red-700 font-bold'; 
+                    } else if (scoreInt >= 4) {
+                        badgeColor = 'bg-amber-100 text-amber-700'; 
+                    }
+
+                    const row = `
+                        <tr class="hover:bg-blue-50 transition border-b text-slate-800">
+                            <td class="p-4 font-mono text-blue-600 font-bold">${lead.caseNumber}</td>
+                            <td class="p-4">
+                                <span class="font-bold text-slate-900">${lead.deceasedName}</span><br>
+                                <span class="text-xs text-slate-400">Notice: ${lead.noticeDate}</span>
+                            </td>
+                            <td class="p-4"><span class="font-semibold">${lead.neighborhood}</span></td>
+                            <td class="p-4 font-semibold text-slate-700">${lead.estimatedValue}</td>
+                            <td class="p-4 text-center"><span class="${badgeColor} px-3 py-1 rounded-full text-xs">${lead.frictionScore}/10</span></td>
+                            <td class="p-4">
+                                <span class="text-xs bg-slate-100 border text-slate-700 px-2 py-1 rounded block mb-1 text-center font-medium">${lead.estateStatus}</span>
+                                <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded block text-center font-bold">${lead.leadQuality}</span>
+                            </td>
+                            <td class="p-4 text-center">
+                                <button onclick="alert('Unlocking Case ${lead.caseNumber}: Contact admin to access exact property address.')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">View Lead</button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error('Error fetching live data rows:', error));
+
+
+        // 2. YOUR SEARCH FILTER CODE (PLACE IT RIGHT HERE)
+        function searchLeads() {
+            let input = document.getElementById("searchInput").value.toUpperCase();
+            let table = document.getElementById("lead-table-body");
+            let tr = table.getElementsByTagName("tr");
+
+            // Loop through all table rows and hide those that don't match the search query
+            for (let i = 0; i < tr.length; i++) {
+                let textContent = tr[i].textContent || tr[i].innerText;
+                if (textContent.toUpperCase().indexOf(input) > -1) {
+                    tr[i].style.display = ""; // Show row
+                } else {
+                    tr[i].style.display = "none"; // Hide row
                 }
-
-                const row = `
-                    <tr class="hover:bg-blue-50 transition border-b text-slate-800">
-                        <td class="p-4 font-mono text-blue-600 font-bold">${lead.caseNumber}</td>
-                        <td class="p-4">
-                            <span class="font-bold text-slate-900">${lead.deceasedName}</span><br>
-                            <span class="text-xs text-slate-400">Notice: ${lead.noticeDate}</span>
-                        </td>
-                        <td class="p-4">
-                            <span class="font-semibold">${lead.neighborhood}</span>
-                        </td>
-                        <td class="p-4 font-semibold text-slate-700">${lead.estimatedValue}</td>
-                        <td class="p-4 text-center">
-                            <span class="${badgeColor} px-3 py-1 rounded-full text-xs">${lead.frictionScore}/10</span>
-                        </td>
-                        <td class="p-4">
-                            <span class="text-xs bg-slate-100 border text-slate-700 px-2 py-1 rounded block mb-1 text-center font-medium">${lead.estateStatus}</span>
-                            <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded block text-center font-bold">${lead.leadQuality}</span>
-                        </td>
-                        <td class="p-4 text-center">
-                            <button onclick="alert('Unlocking Case ${lead.caseNumber}: Please contact admin to access exact property address, executor contacts, and attorney data.')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition shadow shadow-blue-200">
-                                View Lead
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        })
-        .catch(error => console.error('Error fetching live data rows:', error));
-</script>
-
-
+            }
+        }
+    </script>
 </body>
-</html>
+</html></html>
