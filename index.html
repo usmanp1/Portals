@@ -88,19 +88,27 @@
         </div>
     </footer>
 
-    <script>
-        const GOOGLE_SHEET_API = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://script.google.com/macros/s/AKfycbzFE9q40rH6xJZ__oK7JWqDULRQbB5DZyZ6vkY15x0pNG3kHQ3ud6bQ8wP__n18wUgE/exec');
+    <<script>
+        // Your exact verified live deployment link
+        const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbFE9q40rH6xJZ__oK7JWqDULRQbB5DZyZ6vkY15x0pNG3kHQ3ud6bQ8wP__n18wUgE/exec';
 
-        // 1. DATA STREAM PIPELINE
+        // 1. DYNAMIC API CONSUMPTION LAYER (Direct Native Fetch)
         fetch(GOOGLE_SHEET_API)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Network response error');
+                return response.json();
+            })
             .then(data => {
                 const tableBody = document.getElementById('lead-table-body');
                 if(!tableBody) return;
-                tableBody.innerHTML = ''; 
+                tableBody.innerHTML = ''; // Clears the loading spinner completely
+
+                if (data.length === 0 || data.error) {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">No live records found in 'Leads' sheet tab.</td></tr>`;
+                    return;
+                }
 
                 data.forEach(lead => {
-                    // Stripping any text from friction score strings (e.g., "1/10" -> 1)
                     const scoreInt = parseInt(lead.frictionScore) || 0;
                     
                     let badgeColor = 'bg-blue-100 text-blue-700'; 
@@ -110,7 +118,6 @@
                         badgeColor = 'bg-amber-100 text-amber-700'; 
                     }
 
-                    // Mapping keys directly to your exact Google Sheet layout
                     const row = `
                         <tr class="hover:bg-blue-50 transition border-b text-slate-800">
                             <td class="p-4 font-mono text-blue-600 font-bold">${lead.caseNumber}</td>
@@ -122,7 +129,7 @@
                             <td class="p-4 font-semibold text-emerald-700">${lead.estimatedValue}</td>
                             <td class="p-4 text-center"><span class="${badgeColor} px-3 py-1 rounded-full text-xs">${scoreInt}/10</span></td>
                             <td class="p-4">
-                                <span class="text-xs bg-slate-100 border text-slate-700 px-2 py-1 rounded block mb-1 text-center font-medium">${lead.estateStatus}</span>
+                                <span class="text-xs bg-slate-100 border text-slate-700 px-2 py-1 rounded block mb-1 text-center font-medium">${lead.estateStatus || 'Active'}</span>
                                 <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded block text-center font-bold">${lead.leadQuality}</span>
                             </td>
                             <td class="p-4 text-center">
@@ -138,7 +145,7 @@
                 document.getElementById('lead-table-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Failed to load live database. Confirm deployment access configurations.</td></tr>`;
             });
 
-        // 2. SEARCH FILTERS
+        // 2. LIVE SEARCH KEYWORD ENGINE
         function searchLeads() {
             let input = document.getElementById("searchInput").value.toUpperCase();
             let table = document.getElementById("lead-table-body");
@@ -154,7 +161,7 @@
             }
         }
 
-        // 3. DROPDOWN FILTERS
+        // 3. DROPDOWN SELECTION FILTER
         function filterLeadsByDropdown() {
             let countyInput = document.getElementById("countySelect").value.toUpperCase().replace(" COUNTY", "").trim();
             let frictionInput = document.getElementById("frictionSelect").value;
