@@ -59,11 +59,11 @@
                 <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold">
                     <tr>
                         <th class="p-4 border-b">Case #</th>
-                        <th class="p-4 border-b">Deceased & Notice</th>
-                        <th class="p-4 border-b">Micro-Area</th>
+                        <th class="p-4 border-b">Deceased & Notice Date</th>
+                        <th class="p-4 border-b">Micro-Area / Neighborhood</th>
                         <th class="p-4 border-b">Est. Value</th>
                         <th class="p-4 border-b text-center">Friction</th>
-                        <th class="p-4 border-b text-center">Status & Quality</th>
+                        <th class="p-4 border-b text-center">Status & Verdict</th>
                         <th class="p-4 border-b text-center">Action</th>
                     </tr>
                 </thead>
@@ -91,7 +91,7 @@
     <script>
         const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbzxtAYfaTLAq50_uFk8y___B1R9FVB/exec';
 
-        // 1. DYNAMIC API CONSUMPTION LAYER
+        // 1. DATA STREAM PIPELINE
         fetch(GOOGLE_SHEET_API)
             .then(response => response.json())
             .then(data => {
@@ -100,7 +100,9 @@
                 tableBody.innerHTML = ''; 
 
                 data.forEach(lead => {
+                    // Stripping any text from friction score strings (e.g., "1/10" -> 1)
                     const scoreInt = parseInt(lead.frictionScore) || 0;
+                    
                     let badgeColor = 'bg-blue-100 text-blue-700'; 
                     if (scoreInt >= 7) {
                         badgeColor = 'bg-red-100 text-red-700 font-bold'; 
@@ -108,6 +110,7 @@
                         badgeColor = 'bg-amber-100 text-amber-700'; 
                     }
 
+                    // Mapping keys directly to your exact Google Sheet layout
                     const row = `
                         <tr class="hover:bg-blue-50 transition border-b text-slate-800">
                             <td class="p-4 font-mono text-blue-600 font-bold">${lead.caseNumber}</td>
@@ -115,8 +118,8 @@
                                 <span class="font-bold text-slate-900">${lead.deceasedName}</span><br>
                                 <span class="text-xs text-slate-400">Notice: ${lead.noticeDate}</span>
                             </td>
-                            <td class="p-4"><span class="font-semibold">${lead.neighborhood}</span></td>
-                            <td class="p-4 font-semibold text-slate-700">${lead.estimatedValue}</td>
+                            <td class="p-4"><span class="font-semibold text-slate-700">${lead.neighborhood || 'Standard'}</span></td>
+                            <td class="p-4 font-semibold text-emerald-700">${lead.estimatedValue}</td>
                             <td class="p-4 text-center"><span class="${badgeColor} px-3 py-1 rounded-full text-xs">${scoreInt}/10</span></td>
                             <td class="p-4">
                                 <span class="text-xs bg-slate-100 border text-slate-700 px-2 py-1 rounded block mb-1 text-center font-medium">${lead.estateStatus}</span>
@@ -135,7 +138,7 @@
                 document.getElementById('lead-table-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Failed to load live database. Confirm deployment access configurations.</td></tr>`;
             });
 
-        // 2. LIVE SEARCH KEYWORD ENGINE
+        // 2. SEARCH FILTERS
         function searchLeads() {
             let input = document.getElementById("searchInput").value.toUpperCase();
             let table = document.getElementById("lead-table-body");
@@ -151,7 +154,37 @@
             }
         }
 
-        // 3. MULTI-VARIABLE DROPDOWN SELECTION FILTER
+        // 3. DROPDOWN FILTERS
         function filterLeadsByDropdown() {
             let countyInput = document.getElementById("countySelect").value.toUpperCase().replace(" COUNTY", "").trim();
-            let frictionInput = document.getElementById("friction
+            let frictionInput = document.getElementById("frictionSelect").value;
+            let table = document.getElementById("lead-table-body");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 0; i < tr.length; i++) {
+                let rowText = tr[i].textContent || tr[i].innerText;
+                let match = true;
+
+                if (countyInput !== "ALL TENNESSEE COUNTIES") {
+                    if (rowText.toUpperCase().indexOf(countyInput) === -1) {
+                        match = false;
+                    }
+                }
+
+                if (frictionInput !== "Any Friction Score") {
+                    let scoreMatch = rowText.match(/(\d+)\/10/);
+                    if (scoreMatch) {
+                        let score = parseInt(scoreMatch[1]);
+                        if (frictionInput === "High Friction (7-10)" && score < 7) match = false;
+                        if (frictionInput === "Medium Friction (4-6)" && (score < 4 || score > 6)) match = false;
+                    } else {
+                        match = false; 
+                    }
+                }
+
+                tr[i].style.display = match ? "" : "none";
+            }
+        }
+    </script>
+</body>
+</html>
