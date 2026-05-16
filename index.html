@@ -32,58 +32,45 @@
     <main class="container mx-auto py-10 px-4">
         
         <div class="flex flex-wrap gap-4 mb-8 justify-center">
-            <select class="border p-2 rounded shadow-sm bg-white focus:ring-2 focus:ring-blue-500">
+            <select id="countySelect" class="border p-2 rounded shadow-sm bg-white text-slate-800 focus:ring-2 focus:ring-blue-500">
                 <option>All Tennessee Counties</option>
                 <option>Sumner County</option>
                 <option>Davidson County</option>
             </select>
-            <select class="border p-2 rounded shadow-sm bg-white focus:ring-2 focus:ring-blue-500">
+            <select id="frictionSelect" class="border p-2 rounded shadow-sm bg-white text-slate-800 focus:ring-2 focus:ring-blue-500">
                 <option>Any Friction Score</option>
                 <option>High Friction (7-10)</option>
                 <option>Medium Friction (4-6)</option>
             </select>
-            <button class="bg-slate-800 text-white px-6 py-2 rounded shadow hover:bg-slate-700 transition">Filter Leads</button>
+            <button onclick="filterLeadsByDropdown()" class="bg-slate-800 text-white px-6 py-2 rounded shadow hover:bg-slate-700 transition">Filter Leads</button>
         </div>
 
-<div class="mb-6 max-w-md mx-auto">
-    <div class="relative shadow-sm rounded-lg">
-        <input type="text" id="searchInput" onkeyup="searchLeads()" placeholder="Search by Neighborhood, City, or Case..." class="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-slate-800">
-        <div class="absolute left-3 top-3.5 text-slate-400">
-            <i class="fa-solid fa-magnifying-glass"></i>
+        <div class="mb-6 max-w-md mx-auto">
+            <div class="relative shadow-sm rounded-lg">
+                <input type="text" id="searchInput" onkeyup="searchLeads()" placeholder="Search by Neighborhood, City, or Case..." class="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-slate-800">
+                <div class="absolute left-3 top-3.5 text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-
-
 
         <div class="bg-white rounded-xl shadow-xl overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-bold">
                     <tr>
                         <th class="p-4 border-b">Case #</th>
+                        <th class="p-4 border-b">Deceased & Notice</th>
                         <th class="p-4 border-b">Micro-Area</th>
                         <th class="p-4 border-b">Est. Value</th>
                         <th class="p-4 border-b text-center">Friction</th>
-                        <th class="p-4 border-b">Lead Quality</th>
-                        <th class="p-4 border-b">Action</th>
+                        <th class="p-4 border-b text-center">Status & Quality</th>
+                        <th class="p-4 border-b text-center">Action</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr class="hover:bg-blue-50 transition border-b">
-                        <td class="p-4 font-mono text-blue-600 font-bold">24P752</td>
-                        <td class="p-4">
-                            <span class="font-bold text-slate-800">North Nashville</span><br>
-                            <span class="text-xs text-slate-400">Nashville, TN</span>
-                        </td>
-                        <td class="p-4 text-green-700 font-bold">$485,000</td>
-                        <td class="p-4 text-center">
-                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">7/10</span>
-                        </td>
-                        <td class="p-4">
-                            <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Out-of-State Heir</span>
-                        </td>
-                        <td class="p-4">
-                            <button class="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 text-sm">View Lead</button>
+                <tbody id="lead-table-body">
+                    <tr class="border-b">
+                        <td colspan="7" class="p-8 text-center text-slate-400 italic">
+                            <i class="fa-solid fa-circle-notch fa-spin mr-2 text-blue-500"></i> Running live database sync...
                         </td>
                     </tr>
                 </tbody>
@@ -101,20 +88,19 @@
         </div>
     </footer>
 
+    <script>
+        const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbzxtAYfaTLAq50_uFk8y___B1R9FVB/exec';
 
-
-<script>
-    // Paste your Google Apps Script Web App URL between the single quotes:
-    const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbzxtAYfaTLAq50_uFk8y___B1R9FVB/exec';
-
-fetch(GOOGLE_SHEET_API)
+        // 1. DYNAMIC API CONSUMPTION LAYER
+        fetch(GOOGLE_SHEET_API)
             .then(response => response.json())
             .then(data => {
                 const tableBody = document.getElementById('lead-table-body');
+                if(!tableBody) return;
                 tableBody.innerHTML = ''; 
 
                 data.forEach(lead => {
-                    const scoreInt = parseInt(lead.frictionScore);
+                    const scoreInt = parseInt(lead.frictionScore) || 0;
                     let badgeColor = 'bg-blue-100 text-blue-700'; 
                     if (scoreInt >= 7) {
                         badgeColor = 'bg-red-100 text-red-700 font-bold'; 
@@ -131,38 +117,41 @@ fetch(GOOGLE_SHEET_API)
                             </td>
                             <td class="p-4"><span class="font-semibold">${lead.neighborhood}</span></td>
                             <td class="p-4 font-semibold text-slate-700">${lead.estimatedValue}</td>
-                            <td class="p-4 text-center"><span class="${badgeColor} px-3 py-1 rounded-full text-xs">${lead.frictionScore}/10</span></td>
+                            <td class="p-4 text-center"><span class="${badgeColor} px-3 py-1 rounded-full text-xs">${scoreInt}/10</span></td>
                             <td class="p-4">
                                 <span class="text-xs bg-slate-100 border text-slate-700 px-2 py-1 rounded block mb-1 text-center font-medium">${lead.estateStatus}</span>
                                 <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded block text-center font-bold">${lead.leadQuality}</span>
                             </td>
                             <td class="p-4 text-center">
-                                <button onclick="alert('Unlocking Case ${lead.caseNumber}: Contact admin to access exact property address.')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition">View Lead</button>
+                                <button onclick="alert('Unlocking Case ' + '${lead.caseNumber}' + ': Contact admin to access exact property address, executor data, and attorney files.')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 font-medium text-sm transition shadow shadow-blue-200">View Lead</button>
                             </td>
                         </tr>
                     `;
                     tableBody.innerHTML += row;
                 });
             })
-            .catch(error => console.error('Error fetching live data rows:', error));
+            .catch(error => {
+                console.error('Error fetching live data rows:', error);
+                document.getElementById('lead-table-body').innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Failed to load live database. Confirm deployment access configurations.</td></tr>`;
+            });
 
-
-        // 2. YOUR SEARCH FILTER CODE (PLACE IT RIGHT HERE)
+        // 2. LIVE SEARCH KEYWORD ENGINE
         function searchLeads() {
             let input = document.getElementById("searchInput").value.toUpperCase();
             let table = document.getElementById("lead-table-body");
             let tr = table.getElementsByTagName("tr");
 
-            // Loop through all table rows and hide those that don't match the search query
             for (let i = 0; i < tr.length; i++) {
                 let textContent = tr[i].textContent || tr[i].innerText;
                 if (textContent.toUpperCase().indexOf(input) > -1) {
-                    tr[i].style.display = ""; // Show row
+                    tr[i].style.display = ""; 
                 } else {
-                    tr[i].style.display = "none"; // Hide row
+                    tr[i].style.display = "none"; 
                 }
             }
         }
-    </script>
-</body>
-</html>
+
+        // 3. MULTI-VARIABLE DROPDOWN SELECTION FILTER
+        function filterLeadsByDropdown() {
+            let countyInput = document.getElementById("countySelect").value.toUpperCase().replace(" COUNTY", "").trim();
+            let frictionInput = document.getElementById("friction
