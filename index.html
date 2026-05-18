@@ -88,23 +88,22 @@
         </div>
     </footer>
 
-    <<script>
-        // Your exact verified live deployment link
+    <script>
         const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbFE9q40rH6xJZ__oK7JWqDULRQbB5DZyZ6vkY15x0pNG3kHQ3ud6bQ8wP__n18wUgE/exec';
 
-        // 1. DYNAMIC API CONSUMPTION LAYER (Direct Native Fetch)
+        // 1. DATA STREAM PIPELINE (Updated to safely handle Text payloads)
         fetch(GOOGLE_SHEET_API)
-            .then(response => response.text()) // Reads the unblocked text stream
-            .then(textData => {
-                const data = JSON.parse(textData); // Converts text cleanly into JavaScript rows
-                const tableBody = document.getElementById('lead-table-body');
-                if(!tableBody) return;
-                tableBody.innerHTML = '';
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text(); // Step A: Pull down the raw text stream safely
             })
-            .then(data => {
+            .then(textData => {
+                // Step B: Convert that unblocked text into real JavaScript rows
+                const data = JSON.parse(textData); 
+                
                 const tableBody = document.getElementById('lead-table-body');
                 if(!tableBody) return;
-                tableBody.innerHTML = ''; // Clears the loading spinner completely
+                tableBody.innerHTML = ''; // Clears the loading spinner layout
 
                 if (data.length === 0 || data.error) {
                     tableBody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 italic">No live records found in 'Leads' sheet tab.</td></tr>`;
