@@ -119,11 +119,11 @@
                             badgeColor = 'bg-amber-100 text-amber-700'; 
                         }
 
-                        // Escape values safely to prevent strings from breaking the HTML alert execution
-                        const safeCase = (lead["Case Number"] || "").toString().replace(/'/g, "\\'");
-                        const safeAddress = (lead["Property Address"] || "").toString().replace(/'/g, "\\'").replace(/\n/g, " ");
-                        const safeExecutor = (lead["Executor(s) & Address"] || "").toString().replace(/'/g, "\\'").replace(/\n/g, " ");
-                        const safeAttorney = (lead["Attorney & Firm"] || "").toString().replace(/'/g, "\\'").replace(/\n/g, " ");
+                        // Escape values safely to prevent single quotes or spaces from crashing the button template literal
+                        const safeCase = (lead["Case Number"] || "").toString().replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        const safeAddress = (lead["Property Address"] || "").toString().replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, " ");
+                        const safeExecutor = (lead["Executor(s) & Address"] || "").toString().replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, " ");
+                        const safeAttorney = (lead["Attorney & Firm"] || "").toString().replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, " ");
 
                         const row = `
                             <tr class="hover:bg-blue-50 transition border-b text-slate-800">
