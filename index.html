@@ -94,9 +94,12 @@
 
         // 1. DYNAMIC API CONSUMPTION LAYER (Direct Native Fetch)
         fetch(GOOGLE_SHEET_API)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response error');
-                return response.json();
+            .then(response => response.text()) // Reads the unblocked text stream
+            .then(textData => {
+                const data = JSON.parse(textData); // Converts text cleanly into JavaScript rows
+                const tableBody = document.getElementById('lead-table-body');
+                if(!tableBody) return;
+                tableBody.innerHTML = '';
             })
             .then(data => {
                 const tableBody = document.getElementById('lead-table-body');
